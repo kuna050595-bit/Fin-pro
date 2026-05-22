@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="ru" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FINPRO — Инвестиционные проекты · Астана</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter + Cormorant Garamond -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- React & ReactDOM CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <!-- Babel для JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Cormorant Garamond', 'serif'],
+                    },
+                    colors: {
+                        brand: {
+                            tint:   '#E8F5EB',   // Светлый фон (Tint)
+                            paper:  '#FFFFFF',
+                            forest: '#0D3A1E',   // Forest Deep
+                            dark:   '#0D3A1E',   // алиас
+                            green:  '#1A6635',   // Brand Green
+                            mid:    '#2D8A4E',   // Mid Green
+                            gold:   '#4AB464',   // Accent Green (CTA)
+                            pale:   '#A8DDB8',   // Pale Green (разделители)
+                            slate:  '#5A6475',   // Нейтральный текст
+                            cream:  '#E8F5EB',   // алиас tint
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #E8F5EB; }
+        .font-serif { font-family: 'Cormorant Garamond', serif; }
+
+        /* Гексагональная сетка */
+        .hex-pattern {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100' viewBox='0 0 56 100'%3E%3Cpath d='M28 66L0 50V18L28 2l28 16v32L28 66zm0-2.1L54 50.5V19.5L28 4.1 2 19.5v30.9L28 63.9z' fill='%231A6635' fill-opacity='0.07'/%3E%3C/svg%3E");
+        }
+
+        /* Слайдер */
+        input[type=range] { -webkit-appearance: none; width: 100%; cursor: pointer; }
+        input[type=range]::-webkit-slider-runnable-track { background: #A8DDB8; height: 4px; border-radius: 4px; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: #0D3A1E; cursor: pointer; margin-top: -8px; }
+
+        /* AI вывод */
+        .ai-output strong { font-weight: 700; color: #0D3A1E; }
+    </style>
+</head>
+<body class="bg-brand-tint text-brand-forest antialiased selection:bg-brand-gold selection:text-white">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        /* ─── Иконки ─── */
+        const IconPhone = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>;
+        const IconChevronRight = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>;
+        const IconCheckCircle = () => <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-brand-gold"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
+        const IconLoader = () => <svg className="animate-spin h-5 w-5 text-brand-gold" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>;
+        const IconShieldCheck = () => <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-brand-gold"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><polyline points="9 11 11 13 15 9"></polyline></svg>;
+        const IconSparkles = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-brand-gold"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path><path d="m5 3 1 2.5L8.5 6 6 7 5 9.5 4 7 1.5 6 4 5.5z"></path></svg>;
+
+        /* ─── Логотип-гексагон FP ─── */
+        const FPHex = ({ size = 40 }) => (
+            <svg width={size} height={size} viewBox="0 0 100 87" xmlns="http://www.w3.org/2000/svg">
+                <polygon points="50,2 97,26 97,74 50,98 3,74 3,26" fill="#1A6635"/>
+                <text x="50" y="60" textAnchor="middle" fill="white" fontSize="36" fontWeight="700"
+                      fontFamily="Inter,sans-serif" letterSpacing="-1">FP</text>
+            </svg>
+        );
+
+        /* ─── WhatsApp ─── */
+        const WhatsAppButton = () => (
+            <a href="https://wa.me/message/NOXSR73QGWZXP1" target="_blank" rel="noopener noreferrer"
+               className="fixed bottom-8 right-8 z-[100] bg-[#25D366] text-white p-4 rounded-full shadow-xl hover:scale-110 transition-transform duration-300 flex items-center justify-center"
+               title="Написать в WhatsApp">
+                <svg width="32" height="32" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.187 0-5.781 2.594-5.781 5.781 0 1.031.281 2.016.797 2.859l-.797 2.906 2.953-.797c.797.469 1.734.75 2.734.75 3.187 0 5.781-2.594 5.781-5.781 0-3.187-2.594-5.781-5.781-5.781zm3.75 8.297c-.141.375-.844.75-1.172.844-.281.094-.656.141-1.828-.328-1.547-.656-2.531-1.781-3.469-3.141-.422-.609-1.031-1.875-.703-2.203.234-.234.609-.328.891-.328.187 0 .375.047.516.094.141.047.281.094.375.234.281.562.891 2.203.984 2.391.094.187.094.328 0 .516-.094.187-.141.281-.281.422-.141.141-.281.328-.375.422-.094.094-.187.234-.047.469.141.234.656 1.078 1.406 1.734.984.891 1.875 1.172 2.156 1.266.281.094.469.094.656-.094.187-.187.75-.938.938-1.266.187-.328.375-.281.656-.187.281.094 1.828.844 2.156 1.031.328.187.516.281.562.469.047.187.047 1.031-.141 1.547z"/></svg>
+            </a>
+        );
+
+        function App() {
+            const TELEGRAM_BOT_TOKEN = '8634428030:AAFf1WhrVJOvihBR79YAvEC1XYtVFUn11j8';
+            const TELEGRAM_CHAT_ID = '5848264844';
+            const GEMINI_API_KEY = "AIzaSyA83TuND-71n0cdk6CshToHJVrMMp5_7QE";
+
+            const [formData, setFormData] = useState({ name: '', phone: '', project: 'Сопровождение проекта под ключ' });
+            const [status, setStatus] = useState('idle');
+            const [aiInput, setAiInput] = useState('');
+            const [aiAnalysisResult, setAiAnalysisResult] = useState('');
+            const [aiLoading, setAiLoading] = useState(false);
+            const [aiError, setAiError] = useState('');
+            const [aiGeneratorOutput, setAiGeneratorOutput] = useState('');
+            const [aiGenLoading, setAiGenLoading] = useState(false);
+            const [calcValues, setCalcValues] = useState({ sum: 150000000, type: 'akk_frp' });
+
+            const getCalculatedTerms = () => {
+                const sum = calcValues.sum;
+                const calculateAnnuity = (annualRate, years) => {
+                    const monthlyRate = annualRate / 100 / 12;
+                    const months = years * 12;
+                    const payment = sum * (monthlyRate * Math.pow(1 + monthlyRate, months)) / (Math.pow(1 + monthlyRate, months) - 1);
+                    return Math.round(payment).toLocaleString('ru-RU') + ' ₸';
+                };
+                if (calcValues.type === 'akk_frp') {
+                    return { term: '10 лет', holidays: 'До 2 лет', rate: '6% (Льготная)', payment: calculateAnnuity(6, 10), advantage: 'Вам доступны инвестиционные каникулы' };
+                }
+                return { term: '5 лет', holidays: 'Отсутствуют', rate: '18% (Базовая БВУ)', payment: calculateAnnuity(18, 5), advantage: 'Высокая переплата по процентам' };
+            };
+
+            const callGeminiAPI = async (promptText, systemPrompt) => {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`;
+                const payload = { contents: [{ parts: [{ text: promptText }] }], systemInstruction: { parts: [{ text: systemPrompt }] } };
+                let delay = 1000;
+                for (let i = 0; i < 5; i++) {
+                    try {
+                        const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                        if (response.ok) { const data = await response.json(); return data.candidates?.[0]?.content?.parts?.[0]?.text || 'Не удалось получить ответ от ИИ.'; }
+                    } catch (e) { console.error(`Попытка ${i + 1} провалилась.`, e); }
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2;
+                }
+                throw new Error("Не удалось выполнить запрос к ИИ после 5 попыток. Попробуйте позже.");
+            };
+
+            const handleAIAnalyze = async () => {
+                if (!aiInput.trim()) { setAiError('Пожалуйста, опишите ваш проект перед анализом.'); return; }
+                setAiLoading(true); setAiError(''); setAiAnalysisResult(''); setAiGeneratorOutput('');
+                const systemInstruction = `Ты — ведущий финансовый ИИ-аналитик компании FINPRO (Астана, Казахстан). Проанализируй описание бизнес-проекта и выдай структурированный финансово-инвестиционный разбор (Markdown):
+1. **Предварительная оценка проекта** — жизнеспособен ли проект.
+2. **Подходящие финансовые институты в РК** — БВУ, АКК, ФРП или Даму.
+3. **Оценка шансов на инвестиционные каникулы** — до 2 лет, срок до 10 лет.
+4. **Рекомендации по залоговой базе** — что может послужить залогом.
+5. **Следующие шаги с FINPRO** — призыв обратиться для разработки ТЭО и бизнес-плана.`;
+                try { const result = await callGeminiAPI(aiInput, systemInstruction); setAiAnalysisResult(result); }
+                catch (err) { setAiError(err.message || 'Произошла непредвиденная ошибка при запросе к ИИ.'); }
+                finally { setAiLoading(false); }
+            };
+
+            const handleGenerateBPStructure = async () => {
+                if (!aiInput.trim()) { setAiError('Пожалуйста, введите описание проекта в поле выше.'); return; }
+                setAiGenLoading(true); setAiError(''); setAiGeneratorOutput(''); setAiAnalysisResult('');
+                const systemInstruction = `Ты — финансовый методолог FINPRO (Астана). На основе описания проекта составь структуру ТЭО/Бизнес-плана для казахстанских банков (БВУ) или государственных холдингов (АКК/ФРП). Ответ в формате Markdown.`;
+                try { const result = await callGeminiAPI(`Составь подробную структуру бизнес-плана: ${aiInput}`, systemInstruction); setAiGeneratorOutput(result); }
+                catch (err) { setAiError(err.message || 'Произошла ошибка при генерации структуры.'); }
+                finally { setAiGenLoading(false); }
+            };
+
+            const handleSubmit = async (e) => {
+                e.preventDefault(); setStatus('loading');
+                const message = `🚀 <b>Новая заявка | FINPRO</b>\n\n👤 <b>Имя / Организация:</b> ${formData.name}\n📞 <b>Телефон:</b> ${formData.phone}\n💼 <b>Направление:</b> ${formData.project}`;
+                try {
+                    const params = new URLSearchParams();
+                    params.append('chat_id', TELEGRAM_CHAT_ID); params.append('text', message); params.append('parse_mode', 'HTML');
+                    const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, { method: 'POST', body: params });
+                    if (response.ok) { setStatus('success'); setFormData({ name: '', phone: '', project: 'Сопровождение проекта под ключ' }); setTimeout(() => setStatus('idle'), 6000); }
+                    else { setStatus('error'); }
+                } catch (error) { console.error('Ошибка отправки лида:', error); setStatus('error'); }
+            };
+
+            const handleInputChange = (e) => { const { name, value } = e.target; setFormData(prev => ({ ...prev, [name]: value })); };
+            const terms = getCalculatedTerms();
+
+            return (
+                <div className="font-sans">
+
+                    <WhatsAppButton />
+
+                    {/* ── НАВИГАЦИЯ ── */}
+                    <nav className="fixed w-full z-50 bg-brand-tint/95 backdrop-blur-md border-b border-brand-pale/50 py-2">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="flex justify-between items-center h-20">
+                                <div className="flex items-center gap-3">
+                                    <FPHex size={44} />
+                                    <div>
+                                        <span className="text-brand-forest font-serif text-2xl tracking-widest uppercase font-bold block leading-none">
+                                            FIN<span className="text-brand-green">PRO</span>
+                                        </span>
+                                        <span className="text-[9px] tracking-[0.2em] text-brand-mid uppercase font-semibold">ASTANA · ИНВЕСТИЦИОННЫЕ ПРОЕКТЫ</span>
+                                    </div>
+                                </div>
+                                <div className="hidden lg:flex items-center space-x-8">
+                                    <a href="#about" className="text-brand-forest/80 hover:text-brand-green transition-colors text-xs uppercase tracking-wider font-semibold">О нас</a>
+                                    <a href="#services" className="text-brand-forest/80 hover:text-brand-green transition-colors text-xs uppercase tracking-wider font-semibold">Услуги</a>
+                                    <a href="#state-programs" className="text-brand-forest/80 hover:text-brand-green transition-colors text-xs uppercase tracking-wider font-semibold">Программы</a>
+                                    <a href="tel:+77753335010" className="text-brand-forest hover:text-brand-green transition-colors text-sm font-bold flex items-center gap-2">
+                                        <IconPhone /> +7 775 333 5010
+                                    </a>
+                                    <a href="#form" className="border border-brand-green text-brand-green hover:bg-brand-green hover:text-white px-6 py-2.5 text-xs font-semibold uppercase tracking-widest transition-all duration-200">
+                                        Заказать аудит
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+
+                    {/* ── HERO ── */}
+                    <section className="relative pt-44 pb-28 lg:pt-60 lg:pb-40 overflow-hidden bg-brand-tint">
+                        <div className="absolute inset-0 z-0 hex-pattern opacity-80"></div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-brand-tint via-transparent to-transparent z-0"></div>
+                        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+                                <div className="lg:col-span-8">
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-green/10 text-brand-green text-xs font-semibold tracking-widest uppercase mb-8">
+                                        <span className="w-1.5 h-1.5 bg-brand-gold rounded-full"></span>
+                                        Financial Advisory & Asset Valuation
+                                    </div>
+                                    <h1 className="text-5xl sm:text-7xl lg:text-8xl font-serif text-brand-forest leading-tight mb-8 font-light tracking-tight">
+                                        Привлечение <br/><span className="italic font-normal text-brand-green">инвестиций</span> в проекты
+                                    </h1>
+                                    <p className="text-lg sm:text-xl text-brand-slate font-light mb-12 max-w-2xl leading-relaxed">
+                                        Разработка капитальных бизнес-планов и ТЭО для приобретения недвижимости, техники, нового строительства или модернизации. Сопровождение в БВУ, АКК и ФРП с отсрочкой выплат до 2 лет.
+                                    </p>
+                                    <div className="flex flex-col sm:flex-row gap-5">
+                                        <a href="#form" className="bg-brand-forest text-white hover:bg-brand-gold hover:text-brand-forest px-10 py-5 text-xs font-semibold uppercase tracking-widest transition-all duration-300 text-center shadow-lg">
+                                            Бесплатный аудит проекта
+                                        </a>
+                                        <a href="#calculator" className="border border-brand-green/40 hover:border-brand-green text-brand-forest px-10 py-5 text-xs font-semibold uppercase tracking-widest transition-all duration-300 text-center">
+                                            Калькулятор лимитов
+                                        </a>
+                                    </div>
+                                </div>
+                                <div className="lg:col-span-4 hidden lg:block">
+                                    <div className="border border-brand-pale p-2 rounded-sm bg-white shadow-xl shadow-brand-green/10 transform rotate-2">
+                                        <div className="aspect-[3/4] overflow-hidden bg-brand-tint">
+                                            <img src="https://images.unsplash.com/photo-1486325212027-8081e485255e?w=800&q=80" alt="Архитектура Астаны" className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* ── ЦИФРЫ ── */}
+                    <section className="border-y border-brand-pale/60 bg-white relative z-10 py-16">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
+                                <div className="border-b md:border-b-0 md:border-r border-brand-pale pb-8 md:pb-0 md:pr-4">
+                                    <div className="text-5xl lg:text-6xl font-serif text-brand-forest mb-3 font-semibold">1 000+</div>
+                                    <div className="text-xs font-bold tracking-widest uppercase text-brand-green">Реализованных проектов</div>
+                                </div>
+                                <div className="border-b md:border-b-0 md:border-r border-brand-pale pb-8 md:pb-0 md:pr-4">
+                                    <div className="text-5xl lg:text-6xl font-serif text-brand-forest mb-3 font-semibold">5 500+</div>
+                                    <div className="text-xs font-bold tracking-widest uppercase text-brand-green">Оцененных залогов</div>
+                                </div>
+                                <div>
+                                    <div className="text-5xl lg:text-6xl font-serif text-brand-forest mb-3 font-semibold">4 года</div>
+                                    <div className="text-xs font-bold tracking-widest uppercase text-brand-green">Безупречной практики в РК</div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* ── О НАС ── */}
+                    <section id="about" className="py-28 bg-brand-tint border-b border-brand-pale/50">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+                                <div className="lg:col-span-5 order-2 lg:order-1">
+                                    <div className="aspect-[4/3] w-full overflow-hidden border border-brand-pale shadow-sm bg-white p-2">
+                                        <img src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&q=80" alt="Инвестиционное планирование" className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500" />
+                                    </div>
+                                </div>
+                                <div className="lg:col-span-7 order-1 lg:order-2">
+                                    <div className="text-xs font-bold tracking-widest uppercase text-brand-green mb-3">Стандарты качества</div>
+                                    <h2 className="text-4xl md:text-5xl font-serif text-brand-forest font-light mb-8">
+                                        Бизнес-план как <br/><span className="italic font-normal text-brand-green">фундамент доверия</span> инвестора
+                                    </h2>
+                                    <p className="text-brand-slate text-base mb-6 leading-relaxed font-light">
+                                        Разработка ТЭО и бизнес-плана в <strong className="text-brand-forest font-semibold">FINPRO</strong> — это кропотливая финансово-аналитическая работа. Мы не используем стандартные интернет-шаблоны. Каждый проект просчитывается индивидуально с учетом специфики налогообложения РК, волатильности сырьевых рынков и требований конкретных кредитных комитетов.
+                                    </p>
+                                    <p className="text-brand-slate text-base mb-8 leading-relaxed font-light">
+                                        Документ служит не только для того, чтобы произвести впечатление на государственные институты развития, но и защищает ваш бизнес от кассовых разрывов и операционных рисков.
+                                    </p>
+                                    <div className="border-t border-brand-pale pt-6 flex items-center gap-3">
+                                        <div className="bg-brand-forest text-brand-gold p-2"><IconShieldCheck /></div>
+                                        <div>
+                                            <p className="text-brand-forest font-semibold text-sm">ТОО на общеустановленном налоговом режиме</p>
+                                            <p className="text-brand-slate text-xs font-light">Полная финансовая прозрачность и легитимность для проверок любого уровня.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* ── КАЛЬКУЛЯТОР ── */}
+                    <section id="calculator" className="py-28 bg-white border-b border-brand-pale/50">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="max-w-3xl mb-16 mx-auto text-center">
+                                <div className="text-xs font-bold tracking-widest uppercase text-brand-green mb-2">Наглядное сравнение условий</div>
+                                <h2 className="text-4xl font-serif text-brand-forest font-light tracking-tight">Предварительный расчет платежей</h2>
+                                <p className="text-brand-slate mt-2 font-light">Укажите планируемую сумму инвестиций, чтобы оценить разницу в ежемесячных платежах между коммерческим банком и государственными программами (АКК/ФРП).</p>
+                            </div>
+                            <div className="max-w-5xl mx-auto bg-brand-tint border border-brand-pale p-8 shadow-sm rounded-sm">
+                                <div className="mb-12">
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-brand-forest mb-6 text-center">Объем необходимых заемных средств</label>
+                                    <input type="range" min="10000000" max="500000000" step="5000000"
+                                        value={calcValues.sum}
+                                        onChange={(e) => setCalcValues(prev => ({ ...prev, sum: parseInt(e.target.value) }))} />
+                                    <div className="flex justify-between items-center mt-4">
+                                        <span className="text-xs text-brand-slate font-light">10 млн ₸</span>
+                                        <span className="text-2xl font-serif font-bold text-brand-forest">{(calcValues.sum).toLocaleString('ru-RU')} ₸</span>
+                                        <span className="text-xs text-brand-slate font-light">500 млн ₸</span>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {/* БВУ */}
+                                    <div onClick={() => setCalcValues(prev => ({ ...prev, type: 'bvu' }))}
+                                         className={`cursor-pointer transition-all duration-300 border p-8 rounded-sm ${calcValues.type === 'bvu' ? 'bg-white border-brand-forest shadow-xl scale-[1.02]' : 'bg-transparent border-brand-pale hover:border-brand-green'}`}>
+                                        <div className="text-center border-b border-brand-pale pb-4 mb-6">
+                                            <h3 className="text-xl font-bold text-brand-forest uppercase tracking-wider">Банки (БВУ)</h3>
+                                            <p className="text-xs text-brand-slate mt-1">Классическое финансирование</p>
+                                        </div>
+                                        <div className="space-y-4 mb-8">
+                                            <div className="flex justify-between border-b border-slate-100 pb-2"><span className="text-sm text-brand-slate">Процентная ставка:</span><span className="text-sm font-bold text-brand-forest">~ 18%</span></div>
+                                            <div className="flex justify-between border-b border-slate-100 pb-2"><span className="text-sm text-brand-slate">Срок:</span><span className="text-sm font-bold text-brand-forest">до 5 лет</span></div>
+                                            <div className="flex justify-between pb-2"><span className="text-sm text-brand-slate">Каникулы:</span><span className="text-sm font-bold text-red-600">Отсутствуют</span></div>
+                                        </div>
+                                        <div className={`p-4 text-center rounded-sm ${calcValues.type === 'bvu' ? 'bg-slate-100' : 'bg-slate-50'}`}>
+                                            <span className="block text-xs uppercase tracking-widest text-brand-slate font-bold mb-1">Расчетный платеж в месяц</span>
+                                            <span className="text-3xl font-serif font-bold text-brand-forest">{calcValues.type === 'bvu' ? terms.payment : '-'}</span>
+                                        </div>
+                                    </div>
+                                    {/* АКК/ФРП */}
+                                    <div onClick={() => setCalcValues(prev => ({ ...prev, type: 'akk_frp' }))}
+                                         className={`cursor-pointer transition-all duration-300 border p-8 rounded-sm ${calcValues.type === 'akk_frp' ? 'bg-brand-forest border-brand-forest shadow-xl scale-[1.02]' : 'bg-transparent border-brand-pale hover:border-brand-green'}`}>
+                                        <div className="text-center border-b border-white/20 pb-4 mb-6">
+                                            <h3 className={`text-xl font-bold uppercase tracking-wider ${calcValues.type === 'akk_frp' ? 'text-brand-gold' : 'text-brand-forest'}`}>АКК / ФРП</h3>
+                                            <p className={`text-xs mt-1 ${calcValues.type === 'akk_frp' ? 'text-white/60' : 'text-brand-slate'}`}>Государственные институты</p>
+                                        </div>
+                                        <div className="space-y-4 mb-8">
+                                            <div className="flex justify-between border-b border-white/10 pb-2"><span className={`text-sm ${calcValues.type === 'akk_frp' ? 'text-white/80' : 'text-brand-slate'}`}>Процентная ставка:</span><span className={`text-sm font-bold ${calcValues.type === 'akk_frp' ? 'text-white' : 'text-brand-forest'}`}>~ 6%</span></div>
+                                            <div className="flex justify-between border-b border-white/10 pb-2"><span className={`text-sm ${calcValues.type === 'akk_frp' ? 'text-white/80' : 'text-brand-slate'}`}>Срок:</span><span className={`text-sm font-bold ${calcValues.type === 'akk_frp' ? 'text-white' : 'text-brand-forest'}`}>до 10 лет</span></div>
+                                            <div className="flex justify-between pb-2"><span className={`text-sm ${calcValues.type === 'akk_frp' ? 'text-white/80' : 'text-brand-slate'}`}>Каникулы по долгу:</span><span className={`text-sm font-bold ${calcValues.type === 'akk_frp' ? 'text-brand-gold' : 'text-green-600'}`}>До 2-х лет!</span></div>
+                                        </div>
+                                        <div className={`p-4 text-center rounded-sm ${calcValues.type === 'akk_frp' ? 'bg-white/10' : 'bg-brand-green/10'}`}>
+                                            <span className={`block text-xs uppercase tracking-widest font-bold mb-1 ${calcValues.type === 'akk_frp' ? 'text-brand-gold' : 'text-brand-forest'}`}>Расчетный платеж в месяц</span>
+                                            <span className={`text-3xl font-serif font-bold ${calcValues.type === 'akk_frp' ? 'text-white' : 'text-brand-forest'}`}>{calcValues.type === 'akk_frp' ? terms.payment : '-'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p className="text-center text-[10px] text-brand-slate mt-8 font-light">
+                                    * Расчет носит предварительный информационный характер (по формуле аннуитета) и показывает примерную выгоду от участия в государственных программах фондирования.
+                                </p>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* ── ИИ-АССИСТЕНТ ── */}
+                    <section id="ai-assistant" className="py-28 bg-white border-b border-brand-pale/50 relative z-10">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="max-w-3xl mb-16">
+                                <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-green/10 text-brand-green text-xs font-bold uppercase tracking-wider mb-4 rounded-sm">
+                                    <IconSparkles /> Инновационный ИИ-Сервис
+                                </div>
+                                <h2 className="text-4xl md:text-5xl font-serif text-brand-forest font-light tracking-tight">Закрытый кабинет ИИ-экспертизы</h2>
+                                <p className="text-brand-slate text-base mt-4 font-light">Опишите в свободной форме суть вашей инвестиционной задачи (объем средств, локацию, цели), и наша ИИ-модель мгновенно проведет экспресс-анализ.</p>
+                            </div>
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+                                <div className="lg:col-span-5 bg-brand-tint border border-brand-pale p-8 shadow-sm">
+                                    <h3 className="text-md font-bold uppercase tracking-widest text-brand-forest mb-4 border-b border-brand-pale pb-3">Параметры проекта</h3>
+                                    <textarea value={aiInput} onChange={(e) => setAiInput(e.target.value)} rows="6"
+                                        className="w-full bg-white border border-brand-pale rounded-sm p-4 text-brand-forest focus:outline-none focus:border-brand-green focus:ring-1 focus:ring-brand-green text-sm leading-relaxed"
+                                        placeholder="Пример: Планируем строительство нового логистического центра класса А в пригороде Астаны. Необходимы инвестиции в размере 400 млн тенге." />
+                                    {aiError && <p className="text-red-600 text-xs mt-2">{aiError}</p>}
+                                    <div className="mt-6 flex flex-col gap-3">
+                                        <button onClick={handleAIAnalyze} disabled={aiLoading || aiGenLoading}
+                                            className="w-full bg-brand-forest hover:bg-brand-gold hover:text-brand-forest text-white font-semibold py-4 px-4 text-xs uppercase tracking-widest rounded-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+                                            {aiLoading ? <IconLoader /> : <IconSparkles />}
+                                            {aiLoading ? 'Анализ данных...' : '✨ Экспресс-Анализ проекта'}
+                                        </button>
+                                        <button onClick={handleGenerateBPStructure} disabled={aiLoading || aiGenLoading}
+                                            className="w-full border border-brand-green/40 hover:border-brand-green text-brand-forest font-semibold py-4 px-4 text-xs uppercase tracking-widest rounded-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+                                            {aiGenLoading ? <IconLoader /> : <IconSparkles />}
+                                            {aiGenLoading ? 'Генерация структуры...' : '✨ Сгенерировать структуру БП'}
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="lg:col-span-7 bg-brand-tint/40 border border-brand-pale p-8 min-h-[380px] flex flex-col justify-between">
+                                    <div>
+                                        <div className="border-b border-brand-pale pb-3 mb-6 flex justify-between items-center">
+                                            <span className="text-xs uppercase tracking-widest font-bold text-brand-slate">Заключение ИИ-Консультанта</span>
+                                            <span className="w-2 h-2 rounded-full bg-brand-gold animate-pulse"></span>
+                                        </div>
+                                        {!aiAnalysisResult && !aiGeneratorOutput && !aiLoading && !aiGenLoading && (
+                                            <div className="text-center py-20 text-brand-slate">
+                                                <div className="mb-4 flex justify-center opacity-60"><IconSparkles /></div>
+                                                <p className="text-sm font-light">Пожалуйста, внесите описание инвестиционного кейса в форму слева.</p>
+                                            </div>
+                                        )}
+                                        {(aiLoading || aiGenLoading) && (
+                                            <div className="flex flex-col items-center justify-center py-20 text-brand-slate">
+                                                <div className="animate-spin h-8 w-8 text-brand-green mb-4">
+                                                    <svg className="w-full h-full" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                                </div>
+                                                <p className="text-xs uppercase tracking-widest font-semibold text-brand-forest">Идет скоринг проекта...</p>
+                                            </div>
+                                        )}
+                                        {aiAnalysisResult && !aiLoading && (
+                                            <div className="ai-output prose prose-slate max-w-none text-brand-forest text-sm leading-relaxed space-y-4 whitespace-pre-line font-light">{aiAnalysisResult}</div>
+                                        )}
+                                        {aiGeneratorOutput && !aiGenLoading && (
+                                            <div className="ai-output prose prose-slate max-w-none text-brand-forest text-sm leading-relaxed space-y-4 whitespace-pre-line font-light">{aiGeneratorOutput}</div>
+                                        )}
+                                    </div>
+                                    {(aiAnalysisResult || aiGeneratorOutput) && !aiLoading && !aiGenLoading && (
+                                        <div className="mt-8 pt-6 border-t border-brand-pale flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                            <p className="text-xs text-brand-slate font-light">Для детального ТЭО под ключ свяжитесь с FINPRO.</p>
+                                            <a href="#form" className="text-xs font-bold text-brand-green uppercase tracking-widest hover:text-brand-forest flex items-center gap-1 transition-colors">
+                                                Перейти к договору <IconChevronRight />
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* ── 7 ШАГОВ ── */}
+                    <section id="services" className="py-28 bg-brand-tint border-b border-brand-pale/50">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="max-w-3xl mb-20">
+                                <div className="text-xs font-bold tracking-widest uppercase text-brand-green mb-3">Технологический регламент</div>
+                                <h2 className="text-4xl md:text-6xl font-serif text-brand-forest font-light">7 шагов к получению финансирования</h2>
+                                <p className="text-brand-slate text-lg mt-4 font-light">Мы берем на себя полную методологическую и юридическую защиту вашего проекта.</p>
+                            </div>
+                            <div className="space-y-0 border-t border-brand-pale">
+                                {[
+                                    { step: '01', title: 'Сбор финансовых документов', desc: 'Формируем и структурируем полную бухгалтерскую базу вашего предприятия. Подготавливаем расшифровки задолженностей по требованиям БВУ.' },
+                                    { step: '02', title: 'Юридический анализ залогов', desc: 'Проводим тщательный правовой аудит правоустанавливающих документов на недвижимость, земельные участки и технику.' },
+                                    { step: '03', title: 'Аудит остатков ТМЗ', desc: 'Консолидируем информацию по товарно-материальным запасам предприятия для демонстрации коммерческой стабильности.' },
+                                    { step: '04', title: 'Заполнение сложных таблиц БВУ', desc: 'Профессионально заполняем специализированные аналитические таблицы, кэш-флоу и прогнозные балансы.' },
+                                    { step: '05', title: 'Отчет об оценке имущества', desc: 'Формируем легитимный отчет об оценке залоговой базы, который принимается аналитиками всех БВУ, АКК и ФРП.' },
+                                    { step: '06', title: 'Разработка ТЭО и Бизнес-плана', desc: 'Создаем капитальное технико-экономическое обоснование с графиками окупаемости и расчетами рентабельности.' }
+                                ].map((item, idx) => (
+                                    <div key={idx} className="grid grid-cols-1 lg:grid-cols-12 py-10 border-b border-brand-pale items-baseline group hover:bg-white/40 transition-colors duration-150 px-4">
+                                        <div className="lg:col-span-1 text-2xl font-serif text-brand-green font-bold">{item.step}</div>
+                                        <div className="lg:col-span-4 text-xl font-bold text-brand-forest">{item.title}</div>
+                                        <div className="lg:col-span-7 text-brand-slate text-sm font-light leading-relaxed">{item.desc}</div>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="mt-12 bg-brand-forest text-white p-10 flex flex-col md:flex-row justify-between items-center gap-8 rounded-sm">
+                                <div className="flex items-center gap-4">
+                                    <div className="p-3 bg-white/10 text-brand-gold hidden sm:block"><IconShieldCheck /></div>
+                                    <div>
+                                        <h4 className="font-bold text-xl text-white">07. Сопровождение и защита на комитете</h4>
+                                        <p className="text-white/60 text-sm mt-1 font-light">Лично ведем коммуникацию с аналитиками, оперативно отвечая на вопросы финансовых структур.</p>
+                                    </div>
+                                </div>
+                                <a href="#form" className="bg-brand-gold hover:bg-white text-brand-forest px-8 py-4 text-xs font-bold uppercase tracking-widest transition-colors rounded-sm whitespace-nowrap">
+                                    Подать проект
+                                </a>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* ── ФОРМА ── */}
+                    <section id="form" className="py-28 bg-white relative z-10">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                                <div>
+                                    <div className="text-xs font-bold tracking-widest uppercase text-brand-green mb-2">Начать проект</div>
+                                    <h2 className="text-4xl md:text-5xl font-serif text-brand-forest mb-6 font-light">Заказать профессиональный аудит</h2>
+                                    <p className="text-brand-slate text-base mb-8 leading-relaxed font-light">
+                                        Оставьте ваши контактные данные. Наш ведущий финансовый аналитик свяжется с вами для первичного детального анализа проекта и оценки залоговой базы.
+                                    </p>
+                                    <div className="space-y-6">
+                                        <div className="flex items-center gap-4">
+                                            <div className="p-3 bg-brand-tint border border-brand-pale text-brand-green rounded-sm"><IconPhone /></div>
+                                            <div>
+                                                <h4 className="text-brand-forest font-bold text-sm uppercase tracking-wider mb-1">Прямая связь</h4>
+                                                <a href="tel:+77753335010" className="text-brand-slate text-sm font-light hover:text-brand-green block">+7 775 333 5010</a>
+                                                <a href="https://t.me/business_plan_24" className="text-brand-slate text-sm font-light hover:text-brand-green block">Telegram: @business_plan_24</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="bg-brand-tint p-8 md:p-10 border border-brand-pale rounded-sm shadow-2xl relative overflow-hidden">
+                                    {status === 'success' && (
+                                        <div className="absolute inset-0 z-20 bg-brand-tint/95 backdrop-blur-sm flex flex-col items-center justify-center text-center p-8">
+                                            <IconCheckCircle />
+                                            <h3 className="text-2xl font-serif text-brand-forest mb-2 mt-4 font-bold">Инвест-Запрос принят</h3>
+                                            <p className="text-brand-slate text-sm font-light">Аналитик FINPRO свяжется с вами в течение рабочего дня.</p>
+                                        </div>
+                                    )}
+                                    <h3 className="text-xl font-serif text-brand-forest mb-6 font-bold uppercase tracking-wider">Оформить инвест-запрос</h3>
+                                    {status === 'error' && (
+                                        <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-600 rounded-sm text-sm font-light">
+                                            Ошибка сети. Пожалуйста, напишите нам в WhatsApp или Telegram.
+                                        </div>
+                                    )}
+                                    <form onSubmit={handleSubmit} className="space-y-6">
+                                        <div>
+                                            <label className="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-2">ФИО / Название ТОО</label>
+                                            <input type="text" name="name" required value={formData.name} onChange={handleInputChange}
+                                                className="w-full bg-white border border-brand-pale rounded-sm px-4 py-3 text-brand-forest focus:outline-none focus:border-brand-green focus:ring-1 focus:ring-brand-green text-sm"
+                                                placeholder="ТОО Инвест Групп" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-2">Контактный телефон</label>
+                                            <input type="tel" name="phone" required value={formData.phone} onChange={handleInputChange}
+                                                className="w-full bg-white border border-brand-pale rounded-sm px-4 py-3 text-brand-forest focus:outline-none focus:border-brand-green focus:ring-1 focus:ring-brand-green text-sm"
+                                                placeholder="+7 (707) 000-00-00" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-2">Направление консалтинга</label>
+                                            <select name="project" value={formData.project} onChange={handleInputChange}
+                                                className="w-full bg-white border border-brand-pale rounded-sm px-4 py-3 text-brand-forest focus:outline-none focus:border-brand-green focus:ring-1 focus:ring-brand-green text-sm">
+                                                <option value="Сопровождение проекта под ключ">Сопровождение проекта под ключ</option>
+                                                <option value="Разработка ТЭО и бизнес-плана">Разработка ТЭО и бизнес-плана</option>
+                                                <option value="Оценка залогового имущества">Оценка залогового имущества</option>
+                                            </select>
+                                        </div>
+                                        <button type="submit" disabled={status === 'loading'}
+                                            className="w-full bg-brand-forest hover:bg-brand-gold hover:text-brand-forest text-white font-semibold py-4 rounded-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-md disabled:opacity-70 uppercase tracking-widest text-xs">
+                                            {status === 'loading' ? <><IconLoader /> Обработка...</> : 'Заказать ТЭО'}
+                                        </button>
+                                        <p className="text-[10px] text-brand-slate text-center mt-4 font-light">
+                                            Действует соглашение об NDA (неразглашении конфиденциальных данных).
+                                        </p>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* ── ФУТЕР ── */}
+                    <footer className="bg-brand-forest text-white border-t border-white/10 py-16">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-8 border-b border-white/10">
+                                <div className="flex items-center gap-3">
+                                    <FPHex size={36} />
+                                    <div>
+                                        <span className="text-white font-serif tracking-widest uppercase text-sm font-extrabold block leading-none">FIN<span className="text-brand-gold">PRO</span></span>
+                                        <span className="text-[9px] tracking-[0.18em] text-white/50 uppercase font-semibold">ASTANA · ИНВЕСТИЦИОННЫЕ ПРОЕКТЫ</span>
+                                    </div>
+                                </div>
+                                <div className="flex gap-10 text-xs uppercase tracking-wider font-semibold text-white/60">
+                                    <a href="tel:+77753335010" className="hover:text-white transition-colors">+7 775 333 5010</a>
+                                    <a href="https://wa.me/message/NOXSR73QGWZXP1" className="hover:text-white transition-colors">WhatsApp</a>
+                                    <a href="#calculator" className="hover:text-white transition-colors">Калькулятор</a>
+                                </div>
+                            </div>
+                            <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-8 text-white/40 font-light text-xs">
+                                <p>&copy; 2026 FINPRO. Все права защищены. ТОО (Общеустановленный режим).</p>
+                                <p>Казахстан, г. Астана</p>
+                            </div>
+                        </div>
+                    </footer>
+
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
